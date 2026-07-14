@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: dev
+
+resources:
+- ../../base
+
+# CI updates this image tag automatically on every push to main via
+# `kustomize edit set image` — see .github/workflows/ci.yml. This value is
+# the live record of "what's actually deployed in dev right now."
+images:
+- name: ghcr.io/shahzain-khan450/gitops-demo-app
+  newTag: latest
+
+configMapGenerator:
+- behavior: merge
+  literals:
+  - ENVIRONMENT=dev
+  - APP_VERSION=latest
+  name: gitops-demo-app-config
+
+patches:
+- patch: |-
+    - op: replace
+      path: /spec/replicas
+      value: 1
+  target:
+    kind: Deployment
+    name: gitops-demo-app

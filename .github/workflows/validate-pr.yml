@@ -1,0 +1,26 @@
+# Runs on every PR touching k8s/ — catches a broken overlay (bad patch,
+# wrong namespace, copy-paste mistake between environments) before it can
+# even be merged, let alone promoted. This is the same validate-overlays.sh
+# script you can run locally.
+name: Validate Kustomize Overlays
+
+on:
+  pull_request:
+    paths:
+      - "k8s/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install kustomize
+        run: |
+          curl -sL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz" | tar xz
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Validate all overlays build correctly
+        run: |
+          chmod +x scripts/validate-overlays.sh
+          ./scripts/validate-overlays.sh

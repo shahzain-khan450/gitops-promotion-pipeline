@@ -1,0 +1,34 @@
+# Scopes what the three environment Applications are allowed to deploy —
+# without this, any Application in the "default" project can deploy any
+# resource to any namespace, which defeats the point of environment
+# separation. Restricting destinations here is what actually enforces
+# "dev can't accidentally point at prod."
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: gitops-demo
+  namespace: argocd
+spec:
+  description: GitOps promotion pipeline for gitops-demo-app
+  sourceRepos:
+    - https://github.com/shahzain-khan450/gitops-promotion-pipeline.git
+  destinations:
+    - namespace: dev
+      server: https://kubernetes.default.svc
+    - namespace: staging
+      server: https://kubernetes.default.svc
+    - namespace: prod
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  roles:
+    - name: prod-approvers
+      description: Can manually sync the prod Application
+      policies:
+        - p, proj:gitops-demo:prod-approvers, applications, sync, gitops-demo/prod-app, allow
+      groups:
+        - platform-team

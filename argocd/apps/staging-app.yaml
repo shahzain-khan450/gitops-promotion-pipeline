@@ -1,0 +1,24 @@
+# Staging: also automated sync — the actual gate for staging is the
+# promote-staging.yml workflow, which is a deliberate (if lightweight)
+# action, not fully automatic like dev. Once that workflow commits, ArgoCD
+# picks it up without further clicks.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: staging-app
+  namespace: argocd
+spec:
+  project: gitops-demo
+  source:
+    repoURL: https://github.com/shahzain-khan450/gitops-promotion-pipeline.git
+    targetRevision: main
+    path: k8s/overlays/staging
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

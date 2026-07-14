@@ -1,0 +1,52 @@
+# Manually triggered: "promote whatever's currently running in dev to
+# staging." Staging gets a lighter gate than prod — anyone on the team can
+# trigger it, but it's still a deliberate action, not automatic like dev.
+name: Promote to Staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "promote" to confirm promoting dev -> staging'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    if: github.event.inputs.confirm == 'promote'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install kustomize
+        run: |
+          curl -sL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv5.4.3/kustomize_v5.4.3_linux_amd64.tar.gz" | tar xz
+          sudo mv kustomize /usr/local/bin/
+
+      - name: Read current dev image tag
+        id: dev_tag
+        run: |
+          TAG=$(kustomize build k8s/overlays/dev | grep 'image:' | head -1 | sed 's/.*://')
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Promoting image tag: $TAG"
+
+      - name: Bump staging overlay image tag
+        working-directory: k8s/overlays/staging
+        run: |
+          kustomize edit set image \
+            ghcr.io/${{ github.repository_owner }}/gitops-demo-app:${{ steps.dev_tag.outputs.tag }}
+
+      - name: Update staging ConfigMap version
+        run: ./scripts/bump-image-tag.sh staging "${{ steps.dev_tag.outputs.tag }}"
+
+      - name: Commit and push
+        run: |
+          git config user.name "gitops-ci-bot"
+          git config user.email "gitops-ci-bot@users.noreply.github.com"
+          git add k8s/overlays/staging/
+          git commit -m "promote: ${{ steps.dev_tag.outputs.tag }} dev -> staging (by @${{ github.actor }})"
+          git push

@@ -1,0 +1,23 @@
+# Prod: deliberately NOT automated. This is the second of two gates (the
+# first is the required-reviewer approval in promote-prod.yml before the
+# git commit even happens) — defense in depth. Even after the prod overlay
+# is updated in Git, someone with the "prod-approvers" AppProject role has
+# to explicitly run `argocd app sync prod-app` or click Sync in the UI.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prod-app
+  namespace: argocd
+spec:
+  project: gitops-demo
+  source:
+    repoURL: https://github.com/shahzain-khan450/gitops-promotion-pipeline.git
+    targetRevision: main
+    path: k8s/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: prod
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+    # No "automated:" block — manual sync only, on purpose.

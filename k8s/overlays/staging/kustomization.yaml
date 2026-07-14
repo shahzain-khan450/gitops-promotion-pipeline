@@ -1,0 +1,35 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: staging
+
+resources:
+  - ../../base
+
+# Updated by .github/workflows/promote-staging.yml — copies whatever tag is
+# currently live in dev, i.e. "promote what's already been running in dev."
+images:
+  - name: ghcr.io/shahzain-khan450/gitops-demo-app
+    newTag: latest
+
+configMapGenerator:
+  - name: gitops-demo-app-config
+    behavior: merge
+    literals:
+      - ENVIRONMENT=staging
+      - APP_VERSION=latest
+
+patches:
+  - target:
+      kind: Deployment
+      name: gitops-demo-app
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/cpu
+        value: 100m
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/requests/memory
+        value: 128Mi

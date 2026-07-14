@@ -1,0 +1,26 @@
+# The one Application you apply by hand. It watches argocd/apps/ and creates
+# the dev/staging/prod Applications automatically — add a 4th environment
+# later by dropping one more file in argocd/apps/, no manual argocd commands
+# needed.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gitops-demo-root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: gitops-demo
+  source:
+    repoURL: https://github.com/shahzain-khan450/gitops-promotion-pipeline.git
+    targetRevision: main
+    path: argocd/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

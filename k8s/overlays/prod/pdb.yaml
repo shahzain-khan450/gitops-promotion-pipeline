@@ -1,0 +1,11 @@
+# Prod-only: guarantees at least 2 pods stay up during node drains/upgrades —
+# not something dev/staging need to bother with.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: gitops-demo-app
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: gitops-demo-app

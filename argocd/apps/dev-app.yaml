@@ -1,0 +1,23 @@
+# Dev: fully automated. Every merge to main flows straight through CI into
+# this environment with zero human steps — dev is meant to be disposable
+# and fast to iterate on.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dev-app
+  namespace: argocd
+spec:
+  project: gitops-demo
+  source:
+    repoURL: https://github.com/shahzain-khan450/gitops-promotion-pipeline.git
+    targetRevision: main
+    path: k8s/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
