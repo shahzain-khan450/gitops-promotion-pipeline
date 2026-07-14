@@ -11,13 +11,13 @@ resources:
 # the live record of "what's actually deployed in dev right now."
 images:
 - name: ghcr.io/shahzain-khan450/gitops-demo-app
-  newTag: latest
+  newTag: 855603b
 
 configMapGenerator:
 - behavior: merge
   literals:
   - ENVIRONMENT=dev
-  - APP_VERSION=latest
+  - APP_VERSION=855603b
   name: gitops-demo-app-config
 
 patches:
